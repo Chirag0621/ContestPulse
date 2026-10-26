@@ -19,11 +19,11 @@
     "service_worker": "background.js",
     "type": "module"
   },
-  "permissions": ["storage", "alarms", "notifications"],
+  "permissions": ["storage", "alarms", "notifications", "tabs"],
   "host_permissions": [
-    "https://codeforces.com/*",
-    "https://www.codechef.com/*",
-    "https://leetcode.com/*",
-    "https://atcoder.jp/*"
+    "*://*.codeforces.com/*",
+    "*://*.codechef.com/*",
+    "*://*.leetcode.com/*",
+    "*://*.atcoder.jp/*"
   ]
 }

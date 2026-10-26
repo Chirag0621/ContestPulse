@@ -9,17 +9,32 @@ export async function showContestNotification(reminder) {
   const contest = contests.find((c) => c.id === reminder.contestId);
   if (!contest) return;
 
-  chrome.notifications.create(contest.id, {
-    type: "basic",
-    iconUrl: chrome.runtime.getURL("icons/icon128.png"),
-    title: `${contest.platform}: starting in ${reminder.offsetMinutes} min`,
-    message: contest.name,
-  });
+  if (typeof chrome !== "undefined" && chrome.notifications?.create) {
+    const iconUrl =
+      typeof chrome.runtime?.getURL === "function"
+        ? chrome.runtime.getURL("icons/icon128.png")
+        : "icons/icon128.png";
+
+    chrome.notifications.create(contest.id, {
+      type: "basic",
+      iconUrl,
+      title: `${contest.platform}: starting in ${reminder.offsetMinutes} min`,
+      message: contest.name,
+    });
+  }
 }
 
 export async function handleNotificationClick(notificationId) {
   const contests = await getContests();
   const contest = contests.find((c) => c.id === notificationId);
-  if (contest) chrome.tabs.create({ url: contest.url });
-  chrome.notifications.clear(notificationId);
+  if (contest) {
+    if (typeof chrome !== "undefined" && chrome.tabs?.create) {
+      chrome.tabs.create({ url: contest.url });
+    } else {
+      window.open(contest.url, "_blank");
+    }
+  }
+  if (typeof chrome !== "undefined" && chrome.notifications?.clear) {
+    chrome.notifications.clear(notificationId);
+  }
 }

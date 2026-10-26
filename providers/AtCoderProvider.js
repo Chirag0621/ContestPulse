@@ -33,13 +33,11 @@ function parseTableRows(tableHtml, now) {
   while ((rowMatch = rowRegex.exec(tableHtml)) !== null) {
     const row = rowMatch[1];
 
-    // Find time
-    const timeMatch = row.match(
-      /<time[^>]*class=['"][^'"]*fixtime[^'"]*['"][^>]*>([^<]+)<\/time>/i,
-    );
-    // Find contest anchor
+    // Find time (matches any <time>...</time>)
+    const timeMatch = row.match(/<time[^>]*>([^<]+)<\/time>/i);
+    // Find contest anchor (matches /contests/slug)
     const anchorMatch = row.match(
-      /<a\s+href=['"]\/contests\/([^'"]+)['"][^>]*>([^<]+)<\/a>/i,
+      /<a\s+href=['"]\/contests\/([^'"]+)['"][^>]*>([\s\S]*?)<\/a>/i,
     );
     // Find duration
     const durationMatch = row.match(
@@ -56,11 +54,12 @@ function parseTableRows(tableHtml, now) {
 
       const startTime = new Date(isoStr).getTime();
       const slug = anchorMatch[1].trim();
-      const name = anchorMatch[2].trim();
+      // Strip any nested tags or emojis
+      const name = anchorMatch[2].replace(/<[^>]+>/g, "").trim();
       const duration = durationMatch ? parseDuration(durationMatch[1]) : 7200;
       const endTime = startTime + duration * 1000;
 
-      if (Number.isFinite(startTime) && endTime > now) {
+      if (Number.isFinite(startTime) && endTime > now && name.length > 0) {
         contests.push({
           id: `atcoder-${slug.toLowerCase()}`,
           platform: PLATFORM,

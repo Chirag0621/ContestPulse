@@ -24,25 +24,49 @@ export async function scheduleReminder(contest, offsetMinutes) {
     enabled: true,
   };
   await saveReminders([...reminders, reminder]);
-  await chrome.alarms.create(id, { when: scheduledTime });
+  if (typeof chrome !== "undefined" && chrome.alarms?.create) {
+    await chrome.alarms.create(id, { when: scheduledTime });
+  }
   return reminder;
 }
 
 export async function removeReminder(id) {
-  await chrome.alarms.clear(id);
+  if (typeof chrome !== "undefined" && chrome.alarms?.clear) {
+    await chrome.alarms.clear(id);
+  }
   const reminders = await getReminders();
   await saveReminders(reminders.filter((r) => r.id !== id));
 }
 
 export async function removeAllReminders() {
   const reminders = await getReminders();
-  await Promise.all(reminders.map((r) => chrome.alarms.clear(r.id)));
+  if (typeof chrome !== "undefined" && chrome.alarms?.clear) {
+    await Promise.all(reminders.map((r) => chrome.alarms.clear(r.id)));
+  }
   await saveReminders([]);
 }
 
 /** Re-create alarms from persisted data, drop expired ones. */
 export async function reconcileAlarms() {
-  // TODO: compare contests + settings with stored reminders and Chrome alarms
+  // Compares contests + settings with stored reminders and Chrome alarms
+  if (typeof chrome === "undefined" || !chrome.alarms?.getAll) return;
+
+  const now = Date.now();
+  const reminders = await getReminders();
+  const activeReminders = reminders.filter((r) => r.scheduledTime > now);
+
+  if (activeReminders.length !== reminders.length) {
+    await saveReminders(activeReminders);
+  }
+
+  const existingAlarms = await chrome.alarms.getAll();
+  const existingNames = new Set(existingAlarms.map((a) => a.name));
+
+  for (const r of activeReminders) {
+    if (r.enabled && !existingNames.has(r.id)) {
+      await chrome.alarms.create(r.id, { when: r.scheduledTime });
+    }
+  }
 }
 
 export async function handleAlarmFired(alarm) {

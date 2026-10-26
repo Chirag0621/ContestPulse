@@ -122,7 +122,13 @@ export function ContestCard({
   title.title = contest.name;
   title.textContent = contest.name;
   title.addEventListener("click", () => {
-    if (contest.url) chrome.tabs.create({ url: contest.url });
+    if (contest.url) {
+      if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
+        chrome.tabs.create({ url: contest.url });
+      } else {
+        window.open(contest.url, "_blank", "noopener,noreferrer");
+      }
+    }
   });
   row2.appendChild(title);
 
@@ -255,7 +261,11 @@ export function ContestCard({
 
   openBtn.addEventListener("click", () => {
     if (contest.url) {
-      chrome.tabs.create({ url: contest.url });
+      if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
+        chrome.tabs.create({ url: contest.url });
+      } else {
+        window.open(contest.url, "_blank", "noopener,noreferrer");
+      }
     }
   });
 
