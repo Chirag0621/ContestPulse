@@ -1,17 +1,18 @@
 // Renders one contest: platform tag, status badge, live countdown,
-// contest title, timing metadata, and action buttons.
+// contest title, timing metadata, and action buttons with ReminderPicker.
 // Implements Design Spec §5.5 & §5.6.
 
 import { PLATFORMS } from "../utils/platformUtils.js";
 import { formatContestMeta, getCountdownDetails } from "../utils/dateUtils.js";
 import { escapeHtml } from "../utils/formatUtils.js";
+import { ReminderPicker } from "./ReminderPicker.js";
 
 /**
  * Creates a Contest Card DOM element.
  * @param {Object} props
  * @param {import("../services/contestService.js").Contest} props.contest
  * @param {Array<number>} [props.activeReminders=[]] array of reminder offset minutes
- * @param {function(string, number): void} [props.onSetReminder]
+ * @param {function(import("../services/contestService.js").Contest, number): void} [props.onSetReminder]
  * @param {function(string, number): void} [props.onRemoveReminder]
  * @returns {HTMLElement}
  */
@@ -123,7 +124,7 @@ export function ContestCard({
   title.textContent = contest.name;
   title.addEventListener("click", () => {
     if (contest.url) {
-      if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
+      if (typeof chrome !== "undefined" && chrome.tabs?.create) {
         chrome.tabs.create({ url: contest.url });
       } else {
         window.open(contest.url, "_blank", "noopener,noreferrer");
@@ -140,53 +141,30 @@ export function ContestCard({
   card.appendChild(row2);
 
   // ──────────────────────────────────────────
-  // Row 2.5: Inline Quick-Alert Panel (Toggled by "Set Reminder")
+  // Row 2.5: Inline Quick-Alert Reminder Picker
   // ──────────────────────────────────────────
-  const quickAlertPanel = document.createElement("div");
-  quickAlertPanel.className =
-    "hidden flex-col gap-1.5 p-2 rounded-sm bg-[var(--surface-inset)] border border-[var(--border-subtle)] text-xs";
+  const pickerWrapper = document.createElement("div");
+  pickerWrapper.className = "hidden";
 
-  const quickAlertHeader = document.createElement("div");
-  quickAlertHeader.className = "flex items-center justify-between text-[10px]";
-  quickAlertHeader.innerHTML = `
-    <span class="font-bold text-[var(--muted)] tracking-wider">⏰ QUICK ALERT:</span>
-    <span class="text-[var(--primary)] font-medium">Select reminder offset</span>
-  `;
-  quickAlertPanel.appendChild(quickAlertHeader);
-
-  const presetsRow = document.createElement("div");
-  presetsRow.className = "grid grid-cols-3 gap-1 mt-0.5";
-
-  const offsets = [30, 15, 10];
-  offsets.forEach((min) => {
-    const isSet = activeReminders.includes(min);
-    const pBtn = document.createElement("button");
-    pBtn.type = "button";
-    pBtn.className = `py-1 text-center font-mono text-[11px] rounded-sm transition-colors cursor-pointer ${
-      isSet
-        ? "bg-[var(--primary)] text-[var(--primary-on)] font-bold shadow-sm"
-        : "bg-[var(--bg)] text-[var(--muted)] hover:text-[var(--text)] hover:bg-[var(--surface)]"
-    }`;
-    pBtn.textContent = `${min}m`;
-
-    pBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (isSet) {
-        if (typeof onRemoveReminder === "function") {
-          onRemoveReminder(contest.id, min);
-        }
-      } else {
-        if (typeof onSetReminder === "function") {
-          onSetReminder(contest, min);
-        }
+  const picker = ReminderPicker({
+    contest,
+    activeOffsets: activeReminders,
+    onSetOffset: (c, min) => {
+      if (typeof onSetReminder === "function") {
+        onSetReminder(c, min);
       }
-    });
-
-    presetsRow.appendChild(pBtn);
+    },
+    onRemoveOffset: (cId, min) => {
+      if (typeof onRemoveReminder === "function") {
+        onRemoveReminder(cId, min);
+      }
+    },
+    onClose: () => {
+      pickerWrapper.classList.add("hidden");
+    },
   });
-
-  quickAlertPanel.appendChild(presetsRow);
-  card.appendChild(quickAlertPanel);
+  pickerWrapper.appendChild(picker);
+  card.appendChild(pickerWrapper);
 
   // ──────────────────────────────────────────
   // Row 3: Actions
@@ -195,24 +173,29 @@ export function ContestCard({
   row3.className =
     "flex items-center justify-between pt-1 gap-2 border-t border-[var(--border-subtle)]";
 
-  // Left action: Reminder indicator or Set Reminder button
+  // Left action: Reminder indicator badge(s) or Set Reminder button
   const leftAction = document.createElement("div");
 
   if (activeReminders.length > 0) {
     const reminderBadge = document.createElement("button");
     reminderBadge.type = "button";
     reminderBadge.className =
-      "flex items-center gap-1 px-2 py-0.5 rounded-sm bg-[var(--surface)] text-[var(--primary)] text-[10px] font-semibold border border-[var(--border-subtle)] hover:border-[var(--primary)] cursor-pointer";
+      "flex items-center gap-1 px-2 py-0.5 rounded-sm bg-[var(--surface)] text-[var(--primary)] text-[10px] font-semibold border border-[var(--border-subtle)] hover:border-[var(--primary)] cursor-pointer transition-colors";
+
+    const label =
+      activeReminders.length === 1
+        ? `${activeReminders[0]}m reminder active`
+        : `${activeReminders.map((m) => `${m}m`).join(", ")} active`;
+
     reminderBadge.innerHTML = `
       <svg class="w-3 h-3 stroke-current" fill="none" viewBox="0 0 24 24" stroke-width="2">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
         <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
       </svg>
-      <span>${activeReminders[0]}m reminder active</span>
+      <span>${escapeHtml(label)}</span>
     `;
     reminderBadge.addEventListener("click", () => {
-      quickAlertPanel.classList.toggle("hidden");
-      quickAlertPanel.classList.toggle("flex");
+      pickerWrapper.classList.toggle("hidden");
     });
     leftAction.appendChild(reminderBadge);
   } else {
@@ -228,8 +211,7 @@ export function ContestCard({
       <span>Set Reminder</span>
     `;
     setReminderBtn.addEventListener("click", () => {
-      quickAlertPanel.classList.toggle("hidden");
-      quickAlertPanel.classList.toggle("flex");
+      pickerWrapper.classList.toggle("hidden");
     });
     leftAction.appendChild(setReminderBtn);
   }
@@ -261,7 +243,7 @@ export function ContestCard({
 
   openBtn.addEventListener("click", () => {
     if (contest.url) {
-      if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.create) {
+      if (typeof chrome !== "undefined" && chrome.tabs?.create) {
         chrome.tabs.create({ url: contest.url });
       } else {
         window.open(contest.url, "_blank", "noopener,noreferrer");
