@@ -135,10 +135,15 @@ function createHeader() {
 
   const logo = document.createElement("div");
   logo.className =
-    "w-6 h-6 rounded-sm bg-[var(--surface-raised)] border border-[var(--border-subtle)] flex items-center justify-center overflow-hidden shadow-sm shrink-0";
-  logo.innerHTML = `
-    <img src="../assets/logo.png" alt="ContestPulse" class="w-full h-full object-cover"/>
-  `;
+    "w-6 h-6 rounded-full bg-[var(--surface-raised)] border border-[var(--primary)] flex items-center justify-center overflow-hidden shadow-sm shrink-0 ring-1 ring-[var(--primary)]/30";
+  const logoImg = document.createElement("img");
+  logoImg.src =
+    typeof chrome !== "undefined" && chrome.runtime?.getURL
+      ? chrome.runtime.getURL("assets/logo.png")
+      : "../assets/logo.png";
+  logoImg.alt = "ContestPulse";
+  logoImg.className = "w-full h-full object-cover rounded-full";
+  logo.appendChild(logoImg);
   left.appendChild(logo);
 
   const titleCol = document.createElement("div");
