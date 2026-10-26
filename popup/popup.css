@@ -1,1 +1,20 @@
-/* Dashboard styles (Tailwind handles most styling). */
+/* ContestPulse Popup Dashboard Styles */
+html,
+body {
+  width: 390px;
+  height: 580px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -44,3 +44,12 @@ export async function getLastSync() {
   const { lastSync } = await chrome.storage.local.get("lastSync");
   return lastSync || null;
 }
+
+export async function getSyncErrors() {
+  const { syncErrors } = await chrome.storage.local.get("syncErrors");
+  return syncErrors || [];
+}
+
+export async function saveSyncErrors(errors) {
+  await chrome.storage.local.set({ syncErrors: errors || [] });
+}

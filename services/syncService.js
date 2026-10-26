@@ -5,7 +5,12 @@ import { fetchContests as fetchCodeChef } from "../providers/CodeChefProvider.js
 import { fetchContests as fetchLeetCode } from "../providers/LeetCodeProvider.js";
 import { fetchContests as fetchAtCoder } from "../providers/AtCoderProvider.js";
 import { normalizeContests } from "./contestService.js";
-import { getSettings, saveContests, getContests } from "./storageService.js";
+import {
+  getSettings,
+  saveContests,
+  getContests,
+  saveSyncErrors,
+} from "./storageService.js";
 
 const PROVIDERS = {
   Codeforces: fetchCodeforces,
@@ -23,8 +28,14 @@ export async function syncContests() {
   const fresh = [];
 
   results.forEach((r, i) => {
-    if (r.status === "fulfilled") fresh.push(...r.value);
-    else errors.push({ platform: enabled[i], message: String(r.reason) });
+    if (r.status === "fulfilled") {
+      fresh.push(...r.value);
+    } else {
+      errors.push({
+        platform: enabled[i],
+        message: String(r.reason?.message || r.reason || "Network failure"),
+      });
+    }
   });
 
   // Keep cached data for platforms that failed
@@ -34,5 +45,7 @@ export async function syncContests() {
 
   const merged = normalizeContests([...fresh, ...kept]);
   await saveContests(merged);
-  return { count: merged.length, errors };
+  await saveSyncErrors(errors);
+
+  return { count: merged.length, errors, lastSync: Date.now() };
 }

@@ -2,12 +2,127 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Central theme tokens */
+/* ContestPulse Design System Tokens (derived from ContestPulse_design (4).md) */
 :root {
-  --cp-bg: #ffffff;
-  --cp-text: #111827;
+  /* Surfaces */
+  --bg: #1b2428;
+  --surface: #253237;
+  --surface-raised: #2f3e44;
+  --surface-glass: rgba(37, 50, 55, 0.9);
+  --surface-glass-2: rgba(37, 50, 55, 0.95);
+  --surface-inset: rgba(37, 50, 55, 0.8);
+
+  /* Borders & Fills */
+  --border: #5c6b73;
+  --border-subtle: rgba(92, 107, 115, 0.4);
+  --fill-subtle: rgba(92, 107, 115, 0.3);
+  --fill-subtle-2: rgba(92, 107, 115, 0.4);
+
+  /* Brand / Interactive */
+  --primary: #c2dfe3;
+  --primary-on: #253237;
+  --avatar-bg: #e0fbff;
+
+  /* Text */
+  --text: #e0fbfc;
+  --muted: #9db4c0;
+  --muted-70: rgba(157, 180, 192, 0.7);
+  --muted-60: rgba(157, 180, 192, 0.6);
+
+  /* Semantic */
+  --success: #5bd8a6;
+  --warning: #f4a261;
+  --danger: #ef4444;
+
+  /* Fonts */
+  --font-sans:
+    "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+  --font-mono:
+    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
-:root.dark {
-  --cp-bg: #0f172a;
-  --cp-text: #e5e7eb;
+
+/* Light Theme Tokens */
+:root[data-theme="light"],
+.theme-light {
+  --bg: #f3f6f8;
+  --surface: #ffffff;
+  --surface-raised: #e8eff2;
+  --surface-glass: rgba(255, 255, 255, 0.92);
+  --surface-glass-2: rgba(255, 255, 255, 0.96);
+  --surface-inset: rgba(232, 239, 242, 0.9);
+
+  --border: #c8d5db;
+  --border-subtle: rgba(200, 213, 219, 0.6);
+  --fill-subtle: rgba(200, 213, 219, 0.4);
+  --fill-subtle-2: rgba(200, 213, 219, 0.5);
+
+  --primary: #253237;
+  --primary-on: #ffffff;
+
+  --text: #1b2428;
+  --muted: #5c6b73;
+  --muted-70: rgba(92, 107, 115, 0.75);
+  --muted-60: rgba(92, 107, 115, 0.65);
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* Custom Scrollbar for Compact Extension Popup */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Shimmer Loading Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(92, 107, 115, 0.2) 25%,
+    rgba(92, 107, 115, 0.35) 50%,
+    rgba(92, 107, 115, 0.2) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Spinning Animation for Manual Refresh */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin-active {
+  animation: spin 0.8s linear infinite;
 }
