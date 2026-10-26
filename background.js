@@ -1,17 +1,23 @@
-// Service worker entry point. Registers lifecycle, alarm and notification events.
-// Do not keep important state in memory - the worker can be stopped by Chrome.
 import { syncContests } from "./services/syncService.js";
 import { handleAlarmFired, reconcileAlarms } from "./services/alarmService.js";
 import { handleNotificationClick } from "./services/notificationService.js";
+import { getSettings } from "./services/storageService.js";
 
 const SYNC_ALARM = "contestpulse-sync";
 
 chrome.runtime.onInstalled.addListener(async () => {
-  chrome.alarms.create(SYNC_ALARM, { periodInMinutes: 60 });
+  const settings = await getSettings();
+  chrome.alarms.create(SYNC_ALARM, {
+    periodInMinutes: settings.syncIntervalMinutes || 60,
+  });
   await syncContests();
 });
 
 chrome.runtime.onStartup.addListener(async () => {
+  const settings = await getSettings();
+  chrome.alarms.create(SYNC_ALARM, {
+    periodInMinutes: settings.syncIntervalMinutes || 60,
+  });
   await syncContests();
   await reconcileAlarms();
 });

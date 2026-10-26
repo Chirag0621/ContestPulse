@@ -1,7 +1,12 @@
 // Creates, updates, removes, toggles, and reconciles reminder alarms.
-// Implements Phase 2 Alarm Engine and deterministic ID scheme.
+// Implements Phase 2 & Phase 3 Alarm Engine and Preferences Reconciliation.
 
-import { getReminders, saveReminders, getContests } from "./storageService.js";
+import {
+  getReminders,
+  saveReminders,
+  getContests,
+  getSettings,
+} from "./storageService.js";
 import { showContestNotification } from "./notificationService.js";
 
 /**
@@ -40,6 +45,17 @@ export async function scheduleReminder(contest, offsetMinutes) {
     return null;
   }
 
+  const settings = await getSettings();
+  // Check if platform is enabled
+  if (
+    settings.enabledPlatforms &&
+    !settings.enabledPlatforms.some(
+      (p) => p.toLowerCase() === contest.platform.toLowerCase(),
+    )
+  ) {
+    return null; // Platform disabled
+  }
+
   const reminders = await getReminders();
   const existing = reminders.find((r) => r.id === id);
 
@@ -66,7 +82,11 @@ export async function scheduleReminder(contest, offsetMinutes) {
 
   await saveReminders([...reminders, reminder]);
 
-  if (typeof chrome !== "undefined" && chrome.alarms?.create) {
+  if (
+    settings.notificationsEnabled &&
+    typeof chrome !== "undefined" &&
+    chrome.alarms?.create
+  ) {
     await chrome.alarms.create(id, { when: scheduledTime });
   }
 
@@ -90,8 +110,10 @@ export async function toggleReminder(id, enabled) {
 
   await saveReminders(reminders);
 
+  const settings = await getSettings();
+
   if (typeof chrome !== "undefined" && chrome.alarms) {
-    if (enabled) {
+    if (enabled && settings.notificationsEnabled) {
       if (reminder.scheduledTime > Date.now()) {
         await chrome.alarms.create(id, { when: reminder.scheduledTime });
       }
@@ -131,20 +153,32 @@ export async function removeAllReminders() {
 /**
  * Reconciles stored reminders with Chrome alarms:
  * - Drops expired alarms whose scheduled time or contest end time has passed.
- * - Recreates missing Chrome alarms after browser/worker restart.
+ * - Cancels alarms for platforms disabled in settings.
+ * - Recreates missing Chrome alarms after browser/worker restart if notifications are enabled.
  * @returns {Promise<void>}
  */
 export async function reconcileAlarms() {
   const now = Date.now();
   const reminders = await getReminders();
   const contests = await getContests();
-  const contestMap = new Map(contests.map((c) => [c.id, c]));
+  const settings = await getSettings();
 
-  // Keep reminders where scheduledTime is in future AND contest hasn't ended
+  const contestMap = new Map(contests.map((c) => [c.id, c]));
+  const enabledPlatforms = new Set(
+    (settings.enabledPlatforms || []).map((p) => p.toLowerCase()),
+  );
+  const notificationsEnabled = settings.notificationsEnabled !== false;
+
+  // Keep reminders where:
+  // 1. scheduledTime is in future
+  // 2. contest hasn't ended
+  // 3. platform is currently enabled in settings
   const activeReminders = reminders.filter((r) => {
     if (r.scheduledTime <= now) return false;
     const contest = contestMap.get(r.contestId);
     if (contest && contest.endTime <= now) return false;
+    if (r.platform && !enabledPlatforms.has(r.platform.toLowerCase()))
+      return false;
     return true;
   });
 
@@ -159,15 +193,19 @@ export async function reconcileAlarms() {
 
     // 1. Clear obsolete reminder alarms (excluding sync alarm)
     for (const a of existingAlarms) {
-      if (a.name !== "contestpulse-sync" && !activeNames.has(a.name)) {
-        await chrome.alarms.clear(a.name);
+      if (a.name !== "contestpulse-sync") {
+        if (!notificationsEnabled || !activeNames.has(a.name)) {
+          await chrome.alarms.clear(a.name);
+        }
       }
     }
 
-    // 2. Re-create any missing alarms for enabled active reminders
-    for (const r of activeReminders) {
-      if (r.enabled && !existingNames.has(r.id)) {
-        await chrome.alarms.create(r.id, { when: r.scheduledTime });
+    // 2. Re-create any missing alarms for enabled active reminders (if notifications globally enabled)
+    if (notificationsEnabled) {
+      for (const r of activeReminders) {
+        if (r.enabled && !existingNames.has(r.id)) {
+          await chrome.alarms.create(r.id, { when: r.scheduledTime });
+        }
       }
     }
   }
@@ -183,7 +221,8 @@ export async function handleAlarmFired(alarm) {
   const reminder = reminders.find((r) => r.id === alarm.name);
   if (!reminder) return;
 
-  if (reminder.enabled) {
+  const settings = await getSettings();
+  if (reminder.enabled && settings.notificationsEnabled) {
     await showContestNotification(reminder);
   }
 

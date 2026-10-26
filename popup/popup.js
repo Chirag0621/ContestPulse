@@ -19,6 +19,7 @@ import { formatLastSync } from "../utils/dateUtils.js";
 import { FilterBar } from "../components/FilterBar.js";
 import { PlatformChipsRow } from "../components/PlatformChip.js";
 import { ContestCard } from "../components/ContestCard.js";
+import { applyTheme } from "../utils/themeUtils.js";
 
 // Application State
 const state = {
@@ -81,27 +82,25 @@ async function init() {
 }
 
 /**
- * Applies dark/light/system theme class to document root.
+ * Returns platforms currently enabled in user settings.
  */
-function applyTheme(theme) {
-  const root = document.documentElement;
-  root.classList.remove("theme-light", "dark");
-
-  if (theme === "light") {
-    root.classList.add("theme-light");
-  } else if (theme === "dark") {
-    root.classList.add("dark");
-  } else {
-    // System preference
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    if (prefersDark) {
-      root.classList.add("dark");
-    } else {
-      root.classList.add("theme-light");
-    }
+function getEnabledPlatforms() {
+  if (
+    state.settings?.enabledPlatforms &&
+    Array.isArray(state.settings.enabledPlatforms) &&
+    state.settings.enabledPlatforms.length > 0
+  ) {
+    return state.settings.enabledPlatforms;
   }
+  return ["Codeforces", "LeetCode", "CodeChef", "AtCoder"];
+}
+
+/**
+ * Returns contests excluding platforms disabled in user settings.
+ */
+function getVisibleContests() {
+  const enabled = getEnabledPlatforms();
+  return state.contests.filter((c) => enabled.includes(c.platform));
 }
 
 /**
@@ -162,7 +161,17 @@ function renderApp() {
   app.appendChild(createSyncSearchBar());
 
   // 3. Time Filter Ribbon
-  const counts = getFilterCounts(state.contests, state.activePlatforms);
+  const enabledPlatforms = getEnabledPlatforms();
+  // Ensure active platform filters stay within enabled platforms
+  state.activePlatforms = state.activePlatforms.filter((p) =>
+    enabledPlatforms.includes(p),
+  );
+  if (state.activePlatforms.length === 0) {
+    state.activePlatforms = [...enabledPlatforms];
+  }
+
+  const visibleContests = getVisibleContests();
+  const counts = getFilterCounts(visibleContests, state.activePlatforms);
   const filterRibbon = FilterBar({
     selected: state.timeFilter,
     counts,
@@ -173,8 +182,9 @@ function renderApp() {
   });
   app.appendChild(filterRibbon);
 
-  // 4. Platform Chips Row
+  // 4. Platform Chips Row (only showing platforms enabled in Settings)
   const platformRow = PlatformChipsRow({
+    platforms: enabledPlatforms,
     activePlatforms: state.activePlatforms,
     onToggle: (platform, enabled) => {
       if (enabled) {
@@ -226,7 +236,8 @@ function renderContestListOnly() {
   }
 
   // C. Filter Contests
-  const filtered = filterContests(state.contests, {
+  const visibleContests = getVisibleContests();
+  const filtered = filterContests(visibleContests, {
     timeFilter: state.timeFilter,
     platforms: state.activePlatforms,
     searchQuery: state.searchQuery,
@@ -458,19 +469,28 @@ function createFooterBar() {
 
   const count = state.reminders ? state.reminders.length : 0;
   const hasReminders = count > 0;
+  const isMuted = state.settings?.notificationsEnabled === false;
 
   const left = document.createElement("div");
   left.className = "flex items-center gap-1.5";
   left.innerHTML = `
     <svg class="w-3.5 h-3.5 ${
-      hasReminders ? "text-[var(--success)]" : "text-[var(--muted)]"
+      isMuted
+        ? "text-[var(--warning)]"
+        : hasReminders
+          ? "text-[var(--success)]"
+          : "text-[var(--muted)]"
     }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
       <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
     </svg>
-    <span class="font-semibold tracking-[0.33px] text-[var(--text)]">${count} Reminder${
-      count === 1 ? "" : "s"
-    } Scheduled</span>
+    <span class="font-semibold tracking-[0.33px] ${
+      isMuted ? "text-[var(--warning)]" : "text-[var(--text)]"
+    }">
+      ${count} Reminder${count === 1 ? "" : "s"} Scheduled${
+        isMuted ? " (Muted in Settings)" : ""
+      }
+    </span>
   `;
   footer.appendChild(left);
 

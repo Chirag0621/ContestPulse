@@ -16,6 +16,7 @@ import {
 import { formatLocalDateTime } from "../utils/dateUtils.js";
 import { PLATFORMS } from "../utils/platformUtils.js";
 import { escapeHtml } from "../utils/formatUtils.js";
+import { applyTheme } from "../utils/themeUtils.js";
 
 // Page State
 const state = {
@@ -43,6 +44,9 @@ async function init() {
   state.reminders = reminders || [];
   state.contests = (contests || []).filter((c) => c.startTime > Date.now());
   state.settings = settings;
+
+  // Apply active theme
+  applyTheme(settings?.theme || "system");
 
   if (state.contests.length > 0 && !state.selectedContestId) {
     state.selectedContestId = state.contests[0].id;
@@ -187,29 +191,58 @@ function createHeader() {
 function createPermissionBanner() {
   const count = state.reminders.length;
   const card = document.createElement("div");
-  card.className =
-    "p-2.5 rounded-md bg-[var(--surface)] border border-[var(--border)] flex items-center justify-between text-xs";
+  const isMuted = state.settings?.notificationsEnabled === false;
 
-  card.innerHTML = `
-    <div class="flex items-center gap-2.5">
-      <div class="w-7 h-7 rounded-sm bg-[var(--surface-raised)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--primary)] shadow-sm">
-        <svg class="w-3.5 h-3.5 stroke-current" fill="none" viewBox="0 0 24 24" stroke-width="2">
-          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-        </svg>
-      </div>
-      <div>
-        <div class="flex items-center gap-1.5 font-bold text-[11px] text-[var(--text)]">
-          <span>Chrome Notifications</span>
-          <span class="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
+  card.className = `p-2.5 rounded-md border flex items-center justify-between text-xs ${
+    isMuted
+      ? "bg-[rgba(244,162,97,0.12)] border-[var(--warning)]"
+      : "bg-[var(--surface)] border border-[var(--border)]"
+  }`;
+
+  if (isMuted) {
+    card.innerHTML = `
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-sm bg-[var(--surface-raised)] border border-[var(--warning)] flex items-center justify-center text-[var(--warning)] shadow-sm">
+          <svg class="w-3.5 h-3.5 stroke-current" fill="none" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
         </div>
-        <div class="text-[10px] text-[var(--muted)]">Native background alerts active</div>
+        <div>
+          <div class="flex items-center gap-1.5 font-bold text-[11px] text-[var(--warning)]">
+            <span>Notifications Muted</span>
+          </div>
+          <div class="text-[10px] text-[var(--muted)]">Alarms won't fire while disabled in Settings</div>
+        </div>
       </div>
-    </div>
-    <span class="px-2 py-0.5 rounded-sm bg-[var(--fill-subtle-2)] border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--primary)] font-bold">
-      ${count} Scheduled
-    </span>
-  `;
+      <a href="../options/options.html" class="px-2 py-0.5 rounded-sm bg-[var(--surface-raised)] border border-[var(--warning)] text-[10px] font-semibold text-[var(--warning)] hover:bg-[var(--warning)] hover:text-[var(--primary-on)] transition-colors">
+        Enable ›
+      </a>
+    `;
+  } else {
+    card.innerHTML = `
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-sm bg-[var(--surface-raised)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--primary)] shadow-sm">
+          <svg class="w-3.5 h-3.5 stroke-current" fill="none" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5 font-bold text-[11px] text-[var(--text)]">
+            <span>Chrome Notifications</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
+          </div>
+          <div class="text-[10px] text-[var(--muted)]">Native background alerts active</div>
+        </div>
+      </div>
+      <span class="px-2 py-0.5 rounded-sm bg-[var(--fill-subtle-2)] border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--primary)] font-bold">
+        ${count} Scheduled
+      </span>
+    `;
+  }
+
   return card;
 }
 

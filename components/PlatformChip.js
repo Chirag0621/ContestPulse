@@ -55,20 +55,23 @@ export function PlatformChip({ platform, enabled = true, onToggle } = {}) {
 }
 
 /**
- * Creates the row of 4 equal-width platform chips.
+ * Creates the row of equal-width platform chips based on enabled platforms.
  * @param {Object} props
+ * @param {Array<string>} [props.platforms]
  * @param {Array<string>} [props.activePlatforms]
  * @param {function(string, boolean): void} props.onToggle
  * @returns {HTMLElement}
  */
-export function PlatformChipsRow({ activePlatforms = [], onToggle } = {}) {
+export function PlatformChipsRow({
+  platforms = ["Codeforces", "LeetCode", "CodeChef", "AtCoder"],
+  activePlatforms = [],
+  onToggle,
+} = {}) {
   const row = document.createElement("div");
   row.className =
     "flex items-center gap-1.5 px-3 py-1 bg-transparent select-none";
 
-  const allPlatforms = ["Codeforces", "LeetCode", "CodeChef", "AtCoder"];
-
-  allPlatforms.forEach((p) => {
+  platforms.forEach((p) => {
     const isEnabled = activePlatforms.includes(p);
     const chip = PlatformChip({
       platform: p,

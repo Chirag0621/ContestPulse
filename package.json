@@ -2,6 +2,7 @@
   "name": "contestpulse",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build:css": "tailwindcss -i ./src/input.css -o ./assets/styles.css --minify",
     "watch:css": "tailwindcss -i ./src/input.css -o ./assets/styles.css --watch"
