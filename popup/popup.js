@@ -296,10 +296,10 @@ function createHeader() {
   const left = document.createElement("div");
   left.className = "flex items-center gap-2";
 
-  // 28x28 Circular Logo Tile
+  // 36x36 Circular Logo Tile
   const logo = document.createElement("div");
   logo.className =
-    "w-7 h-7 rounded-full bg-[var(--surface-raised)] border border-[var(--primary)] flex items-center justify-center overflow-hidden shadow-sm shrink-0 ring-1 ring-[var(--primary)]/30";
+    "w-9 h-9 rounded-full bg-[var(--surface-raised)] border border-[var(--primary)] flex items-center justify-center overflow-hidden shadow-sm shrink-0 ring-1 ring-[var(--primary)]/30";
   const logoImg = document.createElement("img");
   logoImg.src =
     typeof chrome !== "undefined" && chrome.runtime?.getURL

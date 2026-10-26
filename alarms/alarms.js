@@ -126,7 +126,7 @@ function createHeader() {
 
   const logo = document.createElement("div");
   logo.className =
-    "w-6 h-6 rounded-full bg-[var(--surface-raised)] border border-[var(--primary)] flex items-center justify-center overflow-hidden shadow-sm shrink-0 ring-1 ring-[var(--primary)]/30";
+    "w-8 h-8 rounded-full bg-[var(--surface-raised)] border border-[var(--primary)] flex items-center justify-center overflow-hidden shadow-sm shrink-0 ring-1 ring-[var(--primary)]/30";
   const logoImg = document.createElement("img");
   logoImg.src =
     typeof chrome !== "undefined" && chrome.runtime?.getURL
