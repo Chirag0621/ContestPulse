@@ -133,6 +133,14 @@ function createHeader() {
   });
   left.appendChild(backBtn);
 
+  const logo = document.createElement("div");
+  logo.className =
+    "w-6 h-6 rounded-sm bg-[var(--surface-raised)] border border-[var(--border-subtle)] flex items-center justify-center overflow-hidden shadow-sm shrink-0";
+  logo.innerHTML = `
+    <img src="../assets/logo.png" alt="ContestPulse" class="w-full h-full object-cover"/>
+  `;
+  left.appendChild(logo);
+
   const titleCol = document.createElement("div");
   titleCol.className = "flex flex-col";
 

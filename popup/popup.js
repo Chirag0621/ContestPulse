@@ -299,11 +299,9 @@ function createHeader() {
   // 28x28 Logo Tile
   const logo = document.createElement("div");
   logo.className =
-    "w-7 h-7 rounded-sm bg-[var(--surface-raised)] border border-[var(--border-subtle)] flex items-center justify-center text-[var(--primary)] shadow-sm";
+    "w-7 h-7 rounded-sm bg-[var(--surface-raised)] border border-[var(--border-subtle)] flex items-center justify-center overflow-hidden shadow-sm shrink-0";
   logo.innerHTML = `
-    <svg class="w-4 h-4 stroke-current" fill="none" viewBox="0 0 24 24" stroke-width="2.2">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-    </svg>
+    <img src="../assets/logo.png" alt="ContestPulse" class="w-full h-full object-cover"/>
   `;
   left.appendChild(logo);
 
