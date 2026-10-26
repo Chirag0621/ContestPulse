@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Central theme tokens */
+:root {
+  --cp-bg: #ffffff;
+  --cp-text: #111827;
+}
+:root.dark {
+  --cp-bg: #0f172a;
+  --cp-text: #e5e7eb;
+}
