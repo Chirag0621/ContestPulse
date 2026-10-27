@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build:css": "tailwindcss -i ./src/input.css -o ./assets/styles.css --minify",
-    "watch:css": "tailwindcss -i ./src/input.css -o ./assets/styles.css --watch"
+    "watch:css": "tailwindcss -i ./src/input.css -o ./assets/styles.css --watch",
+    "package": "powershell -Command \"Compress-Archive -Path manifest.json, background.js, popup, alarms, options, components, providers, services, utils, icons, assets, README.md -DestinationPath ContestPulse-v0.1.0.zip -Force\""
   },
   "devDependencies": {
     "tailwindcss": "^3.4.17"

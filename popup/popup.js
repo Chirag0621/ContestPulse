@@ -110,6 +110,9 @@ async function triggerSync() {
   if (state.isSyncing) return;
   state.isSyncing = true;
   updateSyncButtonUI();
+  if (state.contests.length === 0) {
+    renderContestListOnly();
+  }
 
   try {
     const result = await syncContests();
